@@ -1,3 +1,5 @@
+using WebApplication1.Model;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -16,29 +18,61 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-var summaries = new[]
+var summaries = new List<Pet>
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
+     new Pet {id = 1, name = "Burek", category = Category.Pies, color = "Szary", weight = 20},
+     new Pet {id = 2, name = "Garfield", category = Category.Kot, color = "Rudy", weight = 24},
+     new Pet {id = 3, name = "Maciej", category = Category.Lis, color = "Rudy", weight = 57.5},
+     new Pet {id = 4, name = "Adrian", category = Category.Chomik, color = "Czarny", weight = 2},
+     
 };
 
-app.MapGet("/weatherforecast", () =>
-    {
-        var forecast = Enumerable.Range(1, 5).Select(index =>
-                new WeatherForecast
-                (
-                    DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                    Random.Shared.Next(-20, 55),
-                    summaries[Random.Shared.Next(summaries.Length)]
-                ))
-            .ToArray();
-        return forecast;
-    })
-    .WithName("GetWeatherForecast")
+app.MapGet("/api/pets", () => Results.Ok(summaries))
+    .WithName("GetPets")
     .WithOpenApi();
 
-app.Run();
+app.MapGet("/api/pets/{id:int}", (int id) =>
+    {
+        Pet pet = summaries.FirstOrDefault(p => p.id == id);
+        return pet == null ? Results.NotFound($"Pet with id {id} was not found") : Results.Ok(pet);
+    })
+    .WithName("GetPet")
+    .WithOpenApi();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
+app.MapPost("api/pets", (Pet pet) =>
+    {
+        summaries.Add(pet);
+        return Results.StatusCode(StatusCodes.Status201Created);
+    })
+    .WithName("CreatePet")
+    .WithOpenApi();
+
+app.MapPut("/api/pets/{id:int}", (int id, Pet pet) =>
+    {
+        Pet toEdit = summaries.FirstOrDefault(p => p.id == id);
+        if (toEdit == null)
+        {
+            return Results.NotFound($"Pet with id {id} was not found");
+        }
+
+        summaries.Remove(toEdit);
+        summaries.Add(pet);
+        return Results.NoContent();
+    })
+    .WithName("UpdatePet")
+    .WithOpenApi();
+
+app.MapDelete("/api/pets/{id:int}", (int id) =>
+    {
+        Pet toDelete = summaries.FirstOrDefault(p => p.id == id);
+        if (toDelete == null)
+        {
+            return Results.NoContent();
+        }
+
+        summaries.Remove(toDelete);
+        return Results.NoContent();
+    })
+    .WithName("DeletePet")
+    .WithOpenApi();
+app.Run();
