@@ -71,6 +71,7 @@ app.MapPut("/api/pets/visits/{id:int}", (int id, Visit visit) =>
             return Results.NotFound($"Pet with id {id} was not found");
         }
 
+        visit.PetId = id;
         summaries.Remove(toEdit);
         toEdit.Visits.Add(visit);
         summaries.Add(toEdit);
