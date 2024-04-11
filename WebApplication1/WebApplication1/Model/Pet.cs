@@ -7,4 +7,5 @@ public class Pet
     public Category category { get; set; }
     public double weight { get; set; }
     public string color { get; set; }
+    public List<Visit> Visits { get; set; }
 }
